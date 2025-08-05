@@ -40,6 +40,6 @@ Download the ImageNet dataset from the following Kaggle link:
 To run SeRI, use the following command structure. 'norm' is the base attacker such as CGBA and ADBA; budget and budget2 are base attacker budget and SeRI budget.
 
 ```bash
-python main.py --dataset=imagenet-vgg --targeted=0 --norm=TtBA --epsilon=1.0 --early=0 --budget=8000 --budget2=2000 --beginIMG=0 --remember=1
+python main.py --dataset=mnist-cnn --targeted=0 --norm=CGBA --zip=SeRI --budget=800 --budget2=200 --epsilon=1.0 --early=0 --beginIMG=0 --imgnum=10 --remember=1
 ```
 

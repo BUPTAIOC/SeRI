@@ -206,11 +206,10 @@ class Attacker:
         return self.chosen_block_i
 
 
-    def reset_perturbation(self, inV, new_theta, original_theta):
+    def reset_perturbation(self, inV, k1):
         inV_orig_l2 = torch.norm(inV.adv_v, p=2).item()
         b = self.blocks[0]
-        k1 = new_theta / original_theta
-        inV.theta = new_theta
+        inV.theta = k1
         inV.ADBmin = 0
         if self.args.RGB_mod == 1:
             inV.adv_v[b.channel][b.y1:b.y2 + 1,b.x1:b.x2 + 1] *= k1
@@ -269,77 +268,19 @@ class Attacker:
                 break
         return query, chosen_v
 
-    def binary_Theta_search_old(self, thetaN=2):
-        a, b = 0.0, 90.0
-
-        """"""
-        original_theta = (180.0 / math.pi) * math.atan(
-            math.sqrt(self.blocks_l2sq_sum1 / (self.blocks_l2sq_sum0)))
-        newTheta, oldTheta = 0, copy.deepcopy(original_theta)
-        self.old_best_adv.theta = original_theta
-
-        # newTheta总是尝试更靠左。如果oldTheta靠左，则newTheta靠右
-        if original_theta >= (a + b) / 2:
-            newTheta = (a + original_theta) / 2
-        elif original_theta < (a + b) / 2:
-            newTheta = (original_theta + b) / 2
-        if newTheta > original_theta * 1.4:# limit the size of newTheta to maximum 2original_theta
-            newTheta = original_theta * 1.4
-            b = original_theta * 3
-
-        VtestOld = copy.deepcopy(self.old_best_adv)
-        VtestNew = copy.deepcopy(self.old_best_adv)
-        iter_theta = 0
-        while iter_theta < thetaN:
-            self.reset_perturbation(VtestNew, newTheta, VtestNew.theta)
-            query_plus, chosen_v = self.compare_two_perturbations(VtestOld, VtestNew)
-            self.query += query_plus
-            self.query_t += query_plus
-            iter_theta = iter_theta + 1
-            if chosen_v == 1:
-                VtestOld, VtestNew = VtestNew, VtestOld
-            VtestNew.ADBmax, VtestNew.ADBmin = self.old_best_adv.ADBmax, 0
-
-            if oldTheta >= (a + b) / 2 and chosen_v == 0:
-                a, oldTheta, b = newTheta, oldTheta, b
-            elif oldTheta >= (a + b) / 2 and chosen_v == 1:
-                a, oldTheta, b = a, newTheta, oldTheta
-            elif oldTheta < (a + b) / 2 and chosen_v == 0:
-                a, oldTheta, b = a, oldTheta, newTheta
-            elif oldTheta < (a + b) / 2 and chosen_v == 1:
-                a, oldTheta, b = oldTheta, newTheta, b
-
-            if oldTheta >= (a + b) / 2:
-                newTheta = (a + oldTheta) / 2
-            elif oldTheta < (a + b) / 2:
-                newTheta = (oldTheta + b) / 2
-            if self.query >= self.args.budget2:
-                break
-
-        self.iter_n += 1
-        self.iter_t += 1
-        self.old_best_adv = VtestOld
-        self.old_best_adv.real_R(self.Img_cuda)
-        self.show_message()
-        self.Theta.append([original_theta,self.old_best_adv.theta,self.old_best_adv.theta/original_theta])
-
     def binary_Theta_search(self, thetaN=2):
         a, b = 0.0, 90.0
 
-        original_theta = (180.0 / math.pi) * math.atan(
-            math.sqrt(self.blocks_l2sq_sum1 / (self.blocks_l2sq_sum0)))
-        self.old_best_adv.theta = original_theta
-        ThetaLow, ThetaHigh = self.args.k1 * original_theta, self.args.k2 * original_theta#ThetaLow, ThetaHigh = 0.2 * original_theta, 1.5 * original_theta
         VtestLow, VtestHigh = copy.deepcopy(self.old_best_adv), copy.deepcopy(self.old_best_adv)
-        self.reset_perturbation(VtestLow, ThetaLow, original_theta)
-        self.reset_perturbation(VtestHigh, ThetaHigh, original_theta)
+        self.reset_perturbation(VtestLow, self.args.k1)
+        self.reset_perturbation(VtestHigh, self.args.k2)
 
-        query_plus, chosen_v = self.compare_two_perturbations(self.old_best_adv, VtestHigh)
+        query_plus, chosen_v = self.compare_two_perturbations(self.old_best_adv, VtestLow)
         self.query += query_plus
         self.query_t += query_plus
 
         if chosen_v == 1:
-            self.old_best_adv = VtestHigh
+            self.old_best_adv = VtestLow
         if chosen_v == 0:
             query_plus, chosen_v = self.compare_two_perturbations(self.old_best_adv, VtestHigh)
             self.query += query_plus
@@ -351,7 +292,6 @@ class Attacker:
         self.iter_t += 1
         self.old_best_adv.real_R(self.Img_cuda)
         self.show_message()
-        self.Theta.append([original_theta,self.old_best_adv.theta,self.old_best_adv.theta/original_theta])
 
     def attack(self):
         while self.query < self.args.budget2:

@@ -17,13 +17,13 @@ def main():
     # ###################################################################################
     torch_model, test_loader = None, None
     parser = argparse.ArgumentParser(description='Hard Label Attacks')
-    parser.add_argument('--dataset', default='imagenet-vgg', type=str, help='Dataset')
+    parser.add_argument('--dataset', default='mnsit-cnn', type=str, help='Dataset')
     parser.add_argument('--targeted', default=0, type=int, help='targeted-1 or untargeted-0')
     parser.add_argument('--norm', default='CGBA', type=str, help='Norm for attack, k or l2')
-    parser.add_argument('--zip', default='DBSRA', type=str, help='Decision-based Sensitive Region Aware noize zip approach')
+    parser.add_argument('--zip', default='SeRI', type=str, help='Decision-based Sensitive Region Aware noize zip approach')
     parser.add_argument('--epsilon', default=0.3, type=float, help='attack strength')
-    parser.add_argument('--budget', default=8000, type=int, help='Maximum query for the attack norm k')
-    parser.add_argument('--budget2', default=2000, type=int, help='Maximum query for the Sensitive Region Aware')
+    parser.add_argument('--budget', default=1600, type=int, help='Maximum query for the attack norm k')
+    parser.add_argument('--budget2', default=400, type=int, help='Maximum query for the Sensitive Region Aware')
     parser.add_argument('--early', default=0, type=int, help='early stopping (stop attack once the adversarial example is found)')
     parser.add_argument('--remember', default=0, type=int, help='if remember adversarial examples.')
     parser.add_argument('--imgnum', default=5, type=int, help='Number of samples to be attacked from test dataset.')

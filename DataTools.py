@@ -43,11 +43,11 @@ def save_images(images, folder_name, plustring):
     # Concatenate and save combined image in BMP format
     combined_image = concatenate_images(paths)
     combined_image.save(os.path.join(img_floder_name, f"COMB_{plustring}.bmp"), format='BMP')
-    """ 
+
     for i, pthrol in enumerate(paths):
         for j, pth in enumerate(pthrol):
             os.remove(pth)
-"""
+""""""
 
 def open_image(image_path):
     if os.name == 'nt':  # Windows
